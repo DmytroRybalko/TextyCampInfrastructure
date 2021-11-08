@@ -1,0 +1,63 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(tidytext)
+```
+
+# 1. Датасет моніторингу забудови
+```{r}
+monitoring <- read_xlsx("data/raw/monitoring.xlsx")
+```
+Choose usefull data
+```{r}
+clean_monitoring <- monitoring %>% 
+  select(1:7, 25)
+```
+Відношення статусі забудови
+```{r}
+clean_monitoring %>% 
+  count(.$`Статус будівництва`)
+```
+# Кіл-ть унікальних забудовників
+```{r}
+clean_monitoring %>% 
+  count(.$Забудовник)
+```
+# Розподіл забудови по районам
+```{r}
+clean_monitoring %>% 
+  count(.$Район)
+```
+# Розподіл лівий-правий
+```{r}
+clean_monitoring %>% 
+  summarise(left_right = sum(dplyr::filter(.$Район %in% c("Дарницький", "Деснянський", "Дніпровський")) %>% count(.$Район))) #count(.$`Номер картки об'єкту`))
+```
+```{r}
+clean_monitoring %>% 
+  dplyr::filter(.$Район %in% c("Дарницький", "Деснянський", "Дніпровський")) %>% 
+  count(.$Район) %>% sum(n)
+```
+Кіл-ть забудов лівий берег
+```{r}
+clean_monitoring %>% 
+  dplyr::filter(.$Район %in% c("Дарницький", "Деснянський", "Дніпровський")) %>% 
+  count(.$Район) -> left_mon
+```
+Співвідношення забудови лівий берег / всього
+```{r}
+sum(left_mon$n)/length(clean_monitoring$`Номер картки об'єкту`)
+```
+

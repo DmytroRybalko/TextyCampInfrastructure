@@ -1,0 +1,43 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(tidytext)
+library(wordcloud)
+library(tm)
+```
+
+```{r}
+monitoring <- read_xlsx("data/raw/monitoring.xlsx")
+```
+Choose usefull data
+```{r}
+clean_monitoring <- monitoring %>% 
+  select(1:7, 25)
+```
+# Облако слів для назв об'єктів будівництва
+```{r}
+clean_monitoring$`Назва об'єкту будівництва` %>% 
+  map_chr(., tolower) %>% 
+  count(sort = T) %>% 
+  View()
+```
+
+```{r}
+clean_monitoring$`Назва об'єкту будівництва` %>% 
+  map_chr(., tolower) %>% 
+  #count(sort = T) %>% 
+  wordcloud(.)
+```
+

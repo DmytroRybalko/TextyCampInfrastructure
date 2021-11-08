@@ -1,0 +1,88 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(lubridate)
+```
+
+# 1. Датасет якості ремонту робіт 
+```{r}
+data_road <- read_xls("data/raw/UAD_ALL_DB_DATA.xls")
+```
+Choose usefull data
+```{r}
+data_road %>% 
+  select(1, 4, 5:12, 14:24) %>% 
+  View()
+```
+
+# 1. Датасет "Мережа міжобласних автобусних маршрутів загального користування" https://data.gov.ua/dataset/1b428b3e-d613-43a2-9781-94c26959db06 
+
+### 1.1 Тестуємо датасет на можливість привести дані в long format
+```{r}
+mmm2018 <- read_xlsx("data/raw/merezha-mizhoblasnikh-marshrutiv-na-05-11-2018test.xlsx")
+# mmm2018_2 <- read_xlsx("data/raw/merezha-mizhoblasnikh-marshrutiv-na-05-11-2018test.xlsx",
+#                        col_types = c("numeric", rep("text", 11)))
+```
+Перетворення в long формат
+```{r}
+mmm2018 %>%
+  fill(1:6, 12) %>%
+  rename(Прибуття = `Розклад руху`,
+         Стоянка = X__1,
+         Відправлення = X__2,
+         Відстань = X__3,
+         `Зупиночні пункти` = X__4) -> full_df
+```
+Відфільтруємо значення, які хочемо видалити у загальном датасеті
+```{r}
+drop_out1 <- full_df %>% 
+  dplyr::filter(Прибуття == 'прибуття')
+```
+Фінальний датасет
+```{r}
+test_final_mmm2018 <- anti_join(full_df, drop_out1)
+```
+
+```{r}
+test_final_mmm2018$Прибуття[2] %>% 
+  as.numeric() * 24
+```
+### 1.3 Перетворюємо датасет міжобласних маршрутів так само як і тестовий
+```{r}
+df_mmm2018 <- read_xlsx("data/raw/merezha-mizhoblasnikh-marshrutiv-na-05-11-2018.xlsx",
+                        range = "A5:P31001")
+```
+Перетворюємо датасет:
+```{r}
+df_mmm2018 %>%
+  select(-X__5:-X__8) %>% 
+  fill(1:6, 12) %>%
+  rename(Прибуття = `Розклад руху`,
+         Стоянка = X__1,
+         Відправлення = X__2,
+         Відстань = X__3,
+         `Зупиночні пункти` = X__4) %>% 
+  anti_join(dplyr::filter(., Прибуття == 'прибуття')) -> mmmToFile
+```
+Запишемо дані в новий файл
+```{r}
+saveRDS(mmmToFile, "data/processing/merezha-mizhoblasnikh-marshrutiv-na-05-11-2018.RDS")
+write_delim(mmmToFile, "data/processing/merezha-mizhoblasnikh-marshrutiv-clean.csv", delim = ";;")
+```
+
+# 2. Датасет "Перевірка ліцензій для перевізників та транспортних засобів" https://data.gov.ua/dataset/9b95e684-aa41-4808-9ea5-82fbaf82ee61
+```{r}
+licen_pereviznyk <- fromJSON("data/raw/vehicle.json")
+```
+
